@@ -1,0 +1,147 @@
+clc;
+close all;
+clear all;
+R=30;
+H=22;
+ele=60;
+g=H/tand(ele);
+%g=R-H*cotd(ele);
+%g=20;
+theta_sub = atand((R+g)/H)+ atand((R-g)/H);
+theta_0= (theta_sub/2)-atand((R-g)/H);
+n_H=1;                                            %%Atak vary korae amra amader cell edge ar sathe 3db/10db point k adjust korte parbo
+                                                    %%Akhane n=1.7 a -3db adjusted
+a_H=1/n_H;
+effi=0.8;
+theta_3db=2*acosd(0.5^a_H);
+D_max=(32*log10(2))/(2*theta_3db^2);
+
+D_bore=18;
+
+%% Carrier to Noise and Interferrence ratio
+n_U=10;
+x0=-R:R;
+y0=-R:R;
+z0=0:H;
+f=2;
+c=0.3;
+lamda=c/f;      
+P_H=40;                                             % Tx power
+P_H_wt=10^(P_H/10);
+NF=-100.5;                                          % Noise power
+NF_wt=10^(NF/10);
+CINR1=zeros(size(x0));
+CINR2=zeros(size(x0));
+CINR3=zeros(size(x0));
+CINR=zeros(size(x0));
+m1=size(x0);
+n1=size(y0);
+%p1=size(z0);
+% for p=1:p1(2)
+%     if z0(p)==H
+    for m=1:m1(2)
+        for n=1:n1(2)
+%********************* HAP 1 (Main HAP) ************************************************
+            h_p1=[x0(R+1)-g y0(R+1) z0(H+1)];
+            u_p=[x0(m) y0(n) z0(1)];
+            %u_p=[x0(m) y0(R+1) z0(1)];
+            spp1=[x0(R+1)-g y0(R+1) z0(1)];
+            bore_point1_H1=[H*tand(theta_0)-g y0(R+1) z0(1)];        % Bore at theta_sub/2 point 
+            bore_point2_H1=spp1;                % Bore at spp point 
+            bore_point3_H1=[x0(R+1) y0(R+1) z0(1)];                  % Bore at cell centre point
+            vec_h12bore=[bore_point1_H1(1)-h_p1(1) bore_point1_H1(2)-h_p1(2) bore_point1_H1(3)-h_p1(3)];
+            vec_h12u=[u_p(1)-h_p1(1) u_p(2)-h_p1(2) u_p(3)-h_p1(3)];
+            vec_h12spp1=[spp1(1)-h_p1(1) spp1(2)-h_p1(2) spp1(3)-h_p1(3)];
+            theta_user_H1=acosd(dot(vec_h12u,vec_h12bore)/(norm(vec_h12bore)*norm(vec_h12u)));                     
+            deviation_user_H1=theta_user_H1;                              % Akhane user angle e hocce  deviation
+            A_H1=D_max*effi*cosd(deviation_user_H1)^n_H;
+            A_H1_db=10+10*log10(A_H1);                                 % HAP antenna gain
+            theta_u2spp1= acosd(dot(vec_h12u,vec_h12spp1)/(norm(vec_h12spp1)*norm(vec_h12u)));
+            A_U_H1=effi*cosd(theta_u2spp1)^n_U;
+            A_U_H1_db=D_bore+10*log10(A_U_H1);                        % User antenna gain
+            %A_U_H1_db=D_bore;                        % User antenna gain
+            d1=norm(vec_h12u);                                    % Distance from the user
+            FSL1= (4*pi*d1*1000/lamda)^2;
+            FSL1_db=10*log10(FSL1);                               % Free space loss
+            %FSL_db(m,1)=10*log10(FSL);                          % Ata use kora hocce error checking ar jonno
+            C=P_H+A_H1_db+A_U_H1_db-FSL1_db;                               % Carrier
+            %CINR1(m,n)=C-NF;
+            
+            
+%********************* HAP 2 (Interfering HAP) ************************************************
+            h_p2=[g*cosd(60) g*sind(60) z0(H+1)];
+            %u_p=[x0(m) y0(R+1) z0(1)];
+            spp2=[g*cosd(60) g*sind(60) z0(1)];
+            bore_point1_H2=[abs(bore_point1_H1(1))*cosd(60) abs(bore_point1_H1(1))*sind(60) z0(1)];        % Bore at theta_sub/2 point 
+            bore_point2_H2=spp2;                                        % Bore at spp point 
+            bore_point3_H2=[x0(R+1) y0(R+1) z0(1)];                  % Bore at cell centre point
+            vec_h22bore=[bore_point1_H2(1)-h_p2(1) bore_point1_H2(2)-h_p2(2) bore_point1_H2(3)-h_p2(3)];
+            vec_h22u=[u_p(1)-h_p2(1) u_p(2)-h_p2(2) u_p(3)-h_p2(3)];
+            vec_h22spp2=[spp2(1)-h_p2(1) spp2(2)-h_p2(2) spp2(3)-h_p2(3)];
+            theta_user_H2=acosd(dot(vec_h22u,vec_h22bore)/(norm(vec_h22bore)*norm(vec_h22u)));                     
+            deviation_user_H2=theta_user_H2;                              % Akhane user angle e hocce  deviation
+            A_H2=D_max*effi*cosd(deviation_user_H2)^n_H;
+            A_H2_db=10+10*log10(A_H2);                                 % HAP antenna gain
+            A_H2_wt=10^(A_H2_db/10);
+            theta_u2spp2= acosd(dot(vec_h22u,vec_h22spp2)/(norm(vec_h22spp2)*norm(vec_h22u)));
+            A_U_H2=effi*cosd(theta_u2spp2)^n_U;
+            A_U_H2_db=D_bore+10*log10(A_U_H2);                        % User antenna gain
+            A_U_H2_wt=10+10^(A_U_H2_db/10);
+            d2=norm(vec_h22u);                                    % Distance from the user
+            FSL2= (4*pi*d2*1000/lamda)^2;
+            FSL2_db=10*log10(FSL2);                               % Free space loss
+            %FSL_db(m,1)=10*log10(FSL);                          % Ata use kora hocce error checking ar jonno
+            I_H2_db=P_H+A_H2_db+A_U_H2_db-FSL2_db;
+            I_H21=(P_H_wt*A_H2_wt*A_U_H2_wt)/FSL2;
+            I_H2=10^(I_H2_db/10);
+            CINR2(m,n)=I_H2-NF;
+            
+
+            
+%********************* HAP 3 (Interfering HAP) ************************************************
+            h_p3=[g*cosd(60) -g*sind(60) z0(H+1)];
+            %u_p=[x0(m) y0(R+1) z0(1)];
+            spp3=[g*cosd(60) -g*sind(60) z0(1)];
+            bore_point1_H3=[abs(bore_point1_H1(1))*cosd(60) -abs(bore_point1_H1(1))*sind(60) z0(1)];        % Bore at theta_sub/2 point 
+            bore_point2_H3=spp3;                                        % Bore at spp point 
+            bore_point3_H3=[x0(R+1) y0(R+1) z0(1)];                  % Bore at cell centre point
+            vec_h32bore=[bore_point1_H3(1)-h_p3(1) bore_point1_H3(2)-h_p3(2) bore_point1_H3(3)-h_p3(3)];
+            vec_h32u=[u_p(1)-h_p3(1) u_p(2)-h_p3(2) u_p(3)-h_p3(3)];
+            vec_h32spp3=[spp3(1)-h_p3(1) spp3(2)-h_p3(2) spp3(3)-h_p3(3)];
+            theta_user_H3=acosd(dot(vec_h32u,vec_h32bore)/(norm(vec_h32bore)*norm(vec_h32u)));                     
+            deviation_user_H3=theta_user_H3;                              % Akhane user angle e hocce  deviation
+            A_H3=D_max*effi*cosd(deviation_user_H3)^n_H;
+            A_H3_db=10+10*log10(A_H3);                                 % HAP antenna gain
+            theta_spp3= atand((R-g)/H);
+            theta_u2spp3= acosd(dot(vec_h32u,vec_h32spp3)/(norm(vec_h32spp3)*norm(vec_h32u)));
+            A_U_H3=effi*cosd(theta_u2spp3)^n_U;
+            A_U_H3_db=D_bore+10*log10(A_U_H3);                        % User antenna gain
+            d3=norm(vec_h32u);                                    % Distance from the user
+            FSL3= (4*pi*d3*1000/lamda)^2;
+            FSL3_db=10*log10(FSL3);                               % Free space loss
+            %FSL_db(m,1)=10*log10(FSL);                          % Ata use kora hocce error checking ar jonno
+            I_H3_db=P_H+A_H3_db+A_U_H3_db-FSL3_db; 
+            %I_H3=P_H_wt*A_H3*A_U_H3/FSL3;
+            I_H3=10^(I_H3_db/10);
+            CINR3(m,n)=I_H3-NF;
+            IN=NF_wt+I_H2+I_H3;        
+            
+            %IN=10^(NF/10)+10^(I_H2/10)+10^(I_H3/10);
+          
+            %CINR(n,m)=C-10*log10(IN)+25;
+            CINR(1,m)=C-10*log10(IN)+25;
+    
+        end
+    end
+    %end
+%end
+% figure (1);
+% contour(x0,y0,CINR1,'ShowText','on');
+% figure (2);
+% contour(x0,y0,CINR2,'ShowText','on');
+% figure (3);
+% contour(x0,y0,CINR3,'ShowText','on');
+figure (3);
+%contour(x0,y0,CINR,'ShowText','on');
+plot(x0,CINR(:,R+1),'r');                          % For different boresight
+hold on;

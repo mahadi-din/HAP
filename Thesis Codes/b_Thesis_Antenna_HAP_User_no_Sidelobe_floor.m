@@ -1,0 +1,35 @@
+% clc;
+% close all;
+% clear all;
+theta=-90:1:90;
+effi=0.8;
+n_H=1.7;
+a=1/n_H;
+b=0.5^a;
+theta_3db=2*acosd(b);
+c=32*log10(2);
+D_3db=c/(2*theta_3db^2);                        % for HAP antenna
+D_H=effi*D_3db*cosd(theta).^n_H;
+D_db_H=50+10*log10(D_H);
+figure (1);
+plot(theta,D_db_H,'b');
+title('Radiation Pattern of HAP Antenna');
+xlabel('Angles Away from Boresight');
+ylabel('Directivity in dB');
+hold on;
+grid on;
+
+
+%% For user antenna
+
+
+theta=-90:1:90;
+n_U=58;
+D_bore=18;
+D_U=effi*cosd(theta).^n_U;
+D_U_db= D_bore+10*log10(D_U);
+figure (2);
+plot(theta,D_U_db,'r');
+title('Radiation pattern of User antenna');
+hold on;
+grid on;
